@@ -8,9 +8,55 @@
 # octane automation
 # ================================
 
+from dataclasses import dataclass
+
+import modo
+
+from h3d_utilites.scripts.h3d_utils import get_user_value, set_user_value
+
+USERVAL_NAME_CURRENT_START = 'h3d_oa_start_frame'
+USERVAL_NAME_CURRENT_END = 'h3d_oa_end_frame'
+USERVAL_NAME_WORKING_RANGE = 'h3d_oa_working_range'
+USERVAL_NAME_ANIMATION_OUTPUT_FOLDER = 'h3d_oa_animation_output_folder'
+USERVAL_NAME_FILENAME_PREFIX = 'h3d_oa_save_filename_prefix'
+
+
+@dataclass
+class InitialData:
+    fps: float
+    start: int
+    end: int
+    working_range: int
+    output_folder: str
+    filename_prefix: str
+
 
 def main():
-    ...
+    initial_data: InitialData = get_initial_data()
+
+    print(initial_data)
+
+
+def get_initial_data() -> InitialData:
+
+    fps = modo.Scene().fps
+    start = get_user_value(USERVAL_NAME_CURRENT_START)
+    end = get_user_value(USERVAL_NAME_CURRENT_END)
+    working_range = get_user_value(USERVAL_NAME_WORKING_RANGE)
+    output_folder = get_user_value(USERVAL_NAME_ANIMATION_OUTPUT_FOLDER)
+    filename_prefix = get_user_value(USERVAL_NAME_FILENAME_PREFIX)
+
+
+    info = InitialData(
+        fps=fps,
+        start=start,
+        end=end,
+        working_range=working_range,
+        output_folder=output_folder,
+        filename_prefix=filename_prefix,
+        )
+
+    return info
 
 
 if __name__ == '__main__':

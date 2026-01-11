@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package version="801">
+	<kit name="h3d_octane_automation" restart="YES">
+		<source target="h3d_octane_automation/index.cfg">index.cfg</source>
+		<source target="h3d_octane_automation/scripts/browse_dir.py">scripts/browse_dir.py</source>
+		<source target="h3d_octane_automation/scripts/octane_automation.py">scripts/octane_automation.py</source>
+		<source target="h3d_octane_automation/scripts/set_start_end_user_val.py">scripts/set_start_end_user_val.py</source>
+	</kit>
+	<message button="Help">h3d_octane_automation Kit installation complete.</message>
+</package>
