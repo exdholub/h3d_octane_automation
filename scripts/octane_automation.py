@@ -18,6 +18,7 @@ from h3d_utilites.scripts.h3d_utils import get_user_value, set_user_value
 USERVAL_NAME_CURRENT_START = 'h3d_oa_start_frame'
 USERVAL_NAME_CURRENT_END = 'h3d_oa_end_frame'
 USERVAL_NAME_WORKING_RANGE = 'h3d_oa_working_range'
+USERVAL_NAME_SKIP_FRAMES = 'h3d_oa_skip_frames'
 USERVAL_NAME_ANIMATION_OUTPUT_FOLDER = 'h3d_oa_animation_output_folder'
 USERVAL_NAME_FILENAME_PREFIX = 'h3d_oa_save_filename_prefix'
 
@@ -28,6 +29,7 @@ class InitialData:
     start: int
     end: int
     working_range: int
+    skip_frames: int
     output_folder: str
     filename_prefix: str
 
@@ -35,34 +37,13 @@ class InitialData:
 def main():
     backup_output_folder = get_kernel_output_folder()
     backup_filename_prefix = get_kernel_filename_prefix()
+    backup_skip_frames = get_kernel_skip_frames()
 
-    initial_data: InitialData = get_initial_data()
-    print(initial_data)
+    render(get_ui_data())
 
     set_kernel_output_folder(backup_output_folder)
     set_kernel_filename_prefix(backup_filename_prefix)
-
-
-def get_initial_data() -> InitialData:
-
-    fps = modo.Scene().fps
-    start = get_user_value(USERVAL_NAME_CURRENT_START)
-    end = get_user_value(USERVAL_NAME_CURRENT_END)
-    working_range = get_user_value(USERVAL_NAME_WORKING_RANGE)
-    output_folder = get_user_value(USERVAL_NAME_ANIMATION_OUTPUT_FOLDER)
-    filename_prefix = get_user_value(USERVAL_NAME_FILENAME_PREFIX)
-
-
-    info = InitialData(
-        fps=fps,
-        start=start,
-        end=end,
-        working_range=working_range,
-        output_folder=output_folder,
-        filename_prefix=filename_prefix,
-        )
-
-    return info
+    set_kernel_skip_frames(backup_skip_frames)
 
 
 def get_kernel_output_folder() -> str:
@@ -72,11 +53,6 @@ def get_kernel_output_folder() -> str:
     return kernel_output_folder
 
 
-def set_kernel_output_folder(folder: str):
-    lx.eval('select.itemType renderer')
-    lx.eval(f'item.channel oc_animationFolder "{folder}"')
-
-
 def get_kernel_filename_prefix() -> str:
     lx.eval('select.itemType renderer')
     kernel_filename_prefix = lx.eval('item.channel oc_animationSavePrefix ?')
@@ -84,9 +60,61 @@ def get_kernel_filename_prefix() -> str:
     return kernel_filename_prefix
 
 
+def get_kernel_skip_frames() -> str:
+    lx.eval('select.itemType renderer')
+    kernel_skip_frames = lx.eval('item.channel oc_animateSaveSkipFrames ?')
+
+    return kernel_skip_frames
+
+
+def get_ui_data() -> InitialData:
+
+    fps = modo.Scene().fps
+    start = get_user_value(USERVAL_NAME_CURRENT_START)
+    end = get_user_value(USERVAL_NAME_CURRENT_END)
+    working_range = get_user_value(USERVAL_NAME_WORKING_RANGE)
+    skip_frames = get_user_value(USERVAL_NAME_SKIP_FRAMES)
+    output_folder = get_user_value(USERVAL_NAME_ANIMATION_OUTPUT_FOLDER)
+    filename_prefix = get_user_value(USERVAL_NAME_FILENAME_PREFIX)
+
+
+    info = InitialData(
+        fps=fps,
+        start=start,
+        end=end,
+        working_range=working_range,
+        skip_frames=skip_frames,
+        output_folder=output_folder,
+        filename_prefix=filename_prefix,
+        )
+
+    return info
+
+
+def set_kernel_output_folder(folder: str):
+    lx.eval('select.itemType renderer')
+    lx.eval(f'item.channel oc_animationFolder "{folder}"')
+
+
 def set_kernel_filename_prefix(name: str):
     lx.eval('select.itemType renderer')
     lx.eval(f'item.channel oc_animationSavePrefix "{name}"')
+
+
+def set_kernel_skip_frames(count: int):
+    lx.eval('select.itemType renderer')
+    lx.eval(f'item.channel oc_animateSaveSkipFrames "{count}"')
+
+
+def render(data: InitialData):
+    brutto_start = data.start - data.skip_frames
+    brutto_end = data.end + data.skip_frames
+
+    working_range_start = brutto_start
+
+    while working_range_start < brutto_end:
+    prognosed_end = working_range_start + data.working_range - 1
+    working_range_end = min(prognosed_end, data.end + data.skip_frames)
 
 
 if __name__ == '__main__':
