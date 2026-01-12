@@ -74,19 +74,19 @@ def get_kernel_output_folder() -> str:
 
 def set_kernel_output_folder(folder: str):
     lx.eval('select.itemType renderer')
-    lx.eval(f'item.channel oc_animationFolder {folder}')
+    lx.eval(f'item.channel oc_animationFolder "{folder}"')
 
 
 def get_kernel_filename_prefix() -> str:
     lx.eval('select.itemType renderer')
-    kernel_filename_prefix = lx.eval('item.channel item.channel oc_animationSavePrefix ?')
+    kernel_filename_prefix = lx.eval('item.channel oc_animationSavePrefix ?')
 
     return kernel_filename_prefix
 
 
 def set_kernel_filename_prefix(name: str):
     lx.eval('select.itemType renderer')
-    lx.eval(f'item.channel item.channel oc_animationSavePrefix {name}')
+    lx.eval(f'item.channel oc_animationSavePrefix "{name}"')
 
 
 if __name__ == '__main__':
