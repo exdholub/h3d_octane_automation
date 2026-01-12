@@ -7,15 +7,16 @@
 # get Animation Output Folder from Octane Kernel and set corresponding user value
 # ================================
 
-import lx
-
 from h3d_utilites.scripts.h3d_utils import set_user_value
 
-from h3d_octane_automation.scripts.octane_automation import USERVAL_NAME_ANIMATION_OUTPUT_FOLDER
+from h3d_octane_automation.scripts.octane_automation import (
+    USERVAL_NAME_ANIMATION_OUTPUT_FOLDER,
+    get_kernel_output_folder,
+    )
 
 
 def main():
-    output_folder = lx.eval()
+    output_folder = get_kernel_output_folder()
     set_user_value(USERVAL_NAME_ANIMATION_OUTPUT_FOLDER, output_folder)
 
 

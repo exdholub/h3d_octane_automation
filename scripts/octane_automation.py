@@ -33,16 +33,14 @@ class InitialData:
 
 
 def main():
-    #TODO backup Animation Output Folder
-    lx.eval('select.itemType renderer mode:remove')
-    old_output_folder = lx.eval('item.channel oc_animationFolder ?')
-    #TODO backup Save Filename Prefix
+    backup_output_folder = get_kernel_output_folder()
+    backup_filename_prefix = get_kernel_filename_prefix()
 
     initial_data: InitialData = get_initial_data()
     print(initial_data)
 
-    #TODO restore Animation Output Folder
-    #TODO restore Save Filename Prefix
+    set_kernel_output_folder(backup_output_folder)
+    set_kernel_filename_prefix(backup_filename_prefix)
 
 
 def get_initial_data() -> InitialData:
@@ -74,12 +72,21 @@ def get_kernel_output_folder() -> str:
     return kernel_output_folder
 
 
+def set_kernel_output_folder(folder: str):
+    lx.eval('select.itemType renderer')
+    lx.eval(f'item.channel oc_animationFolder {folder}')
+
+
 def get_kernel_filename_prefix() -> str:
     lx.eval('select.itemType renderer')
     kernel_filename_prefix = lx.eval('item.channel item.channel oc_animationSavePrefix ?')
 
     return kernel_filename_prefix
 
+
+def set_kernel_filename_prefix(name: str):
+    lx.eval('select.itemType renderer')
+    lx.eval(f'item.channel item.channel oc_animationSavePrefix {name}')
 
 
 if __name__ == '__main__':
