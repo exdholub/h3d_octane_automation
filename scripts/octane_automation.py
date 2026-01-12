@@ -5,11 +5,12 @@
 # --------------------------------
 # modo python
 # EMAG
-# octane automation
+# Octane. Render the animation range, dividing it into fragments to optimize Octane motion blur
 # ================================
 
 from dataclasses import dataclass
 
+import lx
 import modo
 
 from h3d_utilites.scripts.h3d_utils import get_user_value, set_user_value
@@ -32,9 +33,16 @@ class InitialData:
 
 
 def main():
-    initial_data: InitialData = get_initial_data()
+    #TODO backup Animation Output Folder
+    lx.eval('select.itemType renderer mode:remove')
+    old_output_folder = lx.eval('item.channel oc_animationFolder ?')
+    #TODO backup Save Filename Prefix
 
+    initial_data: InitialData = get_initial_data()
     print(initial_data)
+
+    #TODO restore Animation Output Folder
+    #TODO restore Save Filename Prefix
 
 
 def get_initial_data() -> InitialData:
@@ -57,6 +65,21 @@ def get_initial_data() -> InitialData:
         )
 
     return info
+
+
+def get_kernel_output_folder() -> str:
+    lx.eval('select.itemType renderer')
+    kernel_output_folder = lx.eval('item.channel oc_animationFolder ?')
+
+    return kernel_output_folder
+
+
+def get_kernel_filename_prefix() -> str:
+    lx.eval('select.itemType renderer')
+    kernel_filename_prefix = lx.eval('item.channel item.channel oc_animationSavePrefix ?')
+
+    return kernel_filename_prefix
+
 
 
 if __name__ == '__main__':
