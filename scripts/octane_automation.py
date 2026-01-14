@@ -10,10 +10,12 @@
 
 from dataclasses import dataclass
 
+import time
+
 import lx
 import modo
 
-from h3d_utilites.scripts.h3d_utils import get_user_value, set_user_value
+from h3d_utilites.scripts.h3d_utils import get_user_value
 
 USERVAL_NAME_CURRENT_START = 'h3d_oa_start_frame'
 USERVAL_NAME_CURRENT_END = 'h3d_oa_end_frame'
@@ -21,6 +23,11 @@ USERVAL_NAME_WORKING_RANGE = 'h3d_oa_working_range'
 USERVAL_NAME_SKIP_FRAMES = 'h3d_oa_skip_frames'
 USERVAL_NAME_ANIMATION_OUTPUT_FOLDER = 'h3d_oa_animation_output_folder'
 USERVAL_NAME_FILENAME_PREFIX = 'h3d_oa_save_filename_prefix'
+
+STATUS_COMPLETED = 4
+NUMBER_OF_RENDER_RETRIES = 3
+TIMEOUT_SECONDS = 30.0
+SLEEP_INTERVAL_SECONDS = 1.0
 
 
 @dataclass
@@ -134,10 +141,30 @@ def render_animation(data: InitialData):
     working_range_start = brutto_start
 
     while working_range_start <= brutto_end:
+        tries = NUMBER_OF_RENDER_RETRIES
         estimated_end = working_range_start + data.working_range - 1
         working_range_end = min(estimated_end, brutto_end)
 
-        render_range(working_range_start, working_range_end)
+        try:
+            render_range(working_range_start, working_range_end)
+        except RuntimeError:
+            if tries <= 0:
+                print('Rendering failed after multiple attempts, aborting further rendering.')
+
+                return
+
+            tries -= 1
+            print('Rendering failed, trying again...')
+
+            continue
+
+        if not wait_for_status(
+            status=STATUS_COMPLETED,
+            timeout_seconds=TIMEOUT_SECONDS,
+            sleep_interval_seconds=SLEEP_INTERVAL_SECONDS
+            ):
+            print('Rendering timeout exceeded, aborting further rendering.')
+            return
 
         working_range_start += data.working_range
 
@@ -147,6 +174,24 @@ def render_range(start: int, end: int):
     print(f'Rendering frames from {start} to {end}...')
     lx.eval('octane.command animate')
     print('Done.')
+
+
+def wait_for_status(status: int, timeout_seconds: float, sleep_interval_seconds: float) -> bool:
+    timer = timeout_seconds
+    while timer > 0:
+        current_status = lx.eval('octane.getRenderStatus ?')
+        print(f'Waiting for render status {status}, current status is {current_status}...')
+
+        if current_status == status:
+            print('Desired render status reached.')
+            return True
+
+        print(f'Sleeping for {sleep_interval_seconds} seconds...')
+        time.sleep(sleep_interval_seconds)
+        print('Woke up.')
+        timer -= sleep_interval_seconds
+
+    return False
 
 
 if __name__ == '__main__':
