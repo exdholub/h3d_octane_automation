@@ -21,13 +21,12 @@ USERVAL_NAME_CURRENT_START = 'h3d_oa_start_frame'
 USERVAL_NAME_CURRENT_END = 'h3d_oa_end_frame'
 USERVAL_NAME_WORKING_RANGE = 'h3d_oa_working_range'
 USERVAL_NAME_SKIP_FRAMES = 'h3d_oa_skip_frames'
+USERVAL_NAME_FRAME_TIMEOUT = 'h3d_oa_frame_timeout'
+USERVAL_NAME_SLEEP_INTERVAL = 'h3d_oa_sleep_interval'
 USERVAL_NAME_ANIMATION_OUTPUT_FOLDER = 'h3d_oa_animation_output_folder'
 USERVAL_NAME_FILENAME_PREFIX = 'h3d_oa_save_filename_prefix'
 
 STATUS_COMPLETED = 4
-NUMBER_OF_RENDER_RETRIES = 3
-TIMEOUT_SECONDS = 30.0
-SLEEP_INTERVAL_SECONDS = 1.0
 
 
 @dataclass
@@ -37,6 +36,8 @@ class InitialData:
     end: int
     working_range: int
     skip_frames: int
+    frame_timeout: float
+    sleep_interval: float
     output_folder: str
     filename_prefix: str
 
@@ -98,6 +99,8 @@ def get_ui_data() -> InitialData:
     end = get_user_value(USERVAL_NAME_CURRENT_END)
     working_range = get_user_value(USERVAL_NAME_WORKING_RANGE)
     skip_frames = get_user_value(USERVAL_NAME_SKIP_FRAMES)
+    frame_timeout = get_user_value(USERVAL_NAME_FRAME_TIMEOUT)
+    sleep_interval = get_user_value(USERVAL_NAME_SLEEP_INTERVAL)
     output_folder = get_user_value(USERVAL_NAME_ANIMATION_OUTPUT_FOLDER)
     filename_prefix = get_user_value(USERVAL_NAME_FILENAME_PREFIX)
 
@@ -108,6 +111,8 @@ def get_ui_data() -> InitialData:
         end=end,
         working_range=working_range,
         skip_frames=skip_frames,
+        frame_timeout=frame_timeout,
+        sleep_interval=sleep_interval,
         output_folder=output_folder,
         filename_prefix=filename_prefix,
         )
@@ -141,27 +146,14 @@ def render_animation(data: InitialData):
     working_range_start = brutto_start
 
     while working_range_start <= brutto_end:
-        tries = NUMBER_OF_RENDER_RETRIES
         estimated_end = working_range_start + data.working_range - 1
         working_range_end = min(estimated_end, brutto_end)
 
-        try:
-            render_range(working_range_start, working_range_end)
-        except RuntimeError:
-            if tries <= 0:
-                print('Rendering failed after multiple attempts, aborting further rendering.')
-
-                return
-
-            tries -= 1
-            print('Rendering failed, trying again...')
-
-            continue
+        render_range(working_range_start, working_range_end)
 
         if not wait_for_status(
-            status=STATUS_COMPLETED,
-            timeout_seconds=TIMEOUT_SECONDS,
-            sleep_interval_seconds=SLEEP_INTERVAL_SECONDS
+            frames=working_range_end - working_range_start + 1,
+            ui_data=data,
             ):
             print('Rendering timeout exceeded, aborting further rendering.')
             return
@@ -176,20 +168,28 @@ def render_range(start: int, end: int):
     print('Done.')
 
 
-def wait_for_status(status: int, timeout_seconds: float, sleep_interval_seconds: float) -> bool:
-    timer = timeout_seconds
+def wait_for_status(
+        frames: int,
+        ui_data: InitialData,
+        status: int = STATUS_COMPLETED,
+        ) -> bool:
+    timer = ui_data.frame_timeout
     while timer > 0:
         current_status = lx.eval('octane.getRenderStatus ?')
         print(f'Waiting for render status {status}, current status is {current_status}...')
 
-        if current_status == status:
-            print('Desired render status reached.')
-            return True
+        # if current_status == status:
+        #     print('frame fiished. frames left:', frames - 1)
+        #     frames -= 1
+        #     if frames <= 0:
+        #         return True
+        #     # reset timer for next frame
+        #     timer = timeout_seconds
 
-        print(f'Sleeping for {sleep_interval_seconds} seconds...')
-        time.sleep(sleep_interval_seconds)
+        print(f'Sleeping for {ui_data.sleep_interval} seconds...')
+        time.sleep(ui_data.sleep_interval)
         print('Woke up.')
-        timer -= sleep_interval_seconds
+        timer -= ui_data.sleep_interval
 
     return False
 
